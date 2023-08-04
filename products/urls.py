@@ -10,5 +10,5 @@ router.register('category', views.CategoryViewSet)
 urlpatterns = [
     path('', include(router.urls)),
     path('images/', views.ProductImagesListCreateAPIView.as_view()),
-    path('product/<int:product_id>/favourite/', views.FavouriteProductListCreateAPIView.as_view()),
+    path('product/<int:product_id>/favourite/', views.FavouriteProductCreateAPIView.as_view()),
 ]

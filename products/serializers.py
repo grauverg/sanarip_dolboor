@@ -29,10 +29,4 @@ class FavouriteProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.FavouriteProduct
         fields = ('id', 'user', 'product')
-
-    def create(self, validated_data):
-        try:
-            return super().create(validated_data)
-        except IntegrityError:
-            instance = self.Meta.model.objects.get(validated_data)
-            instance.delete()
+        unique_together = ('user', 'product')

@@ -1,12 +1,9 @@
-from django.shortcuts import redirect
-from django.urls import reverse
-from rest_framework import generics, viewsets, permissions, status
-from rest_framework.decorators import action
+from rest_framework import generics, viewsets, permissions
 from rest_framework.response import Response
 
 from . import models
 from . import serializers
-from .permissions import IsAuthor, IsAdminOrReadOnly
+from .permissions import IsAuthor, IsAdminOrReadOnly, IsAuthorImages
 
 
 class ProductViewSet(viewsets.ModelViewSet):
@@ -14,28 +11,6 @@ class ProductViewSet(viewsets.ModelViewSet):
     serializer_class = serializers.ProductSerializer
     # user can't create products without logging in
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
-
-    # @action(
-    #     methods=["GET", "POST"],
-    #     detail=True,
-    #     serializer_class=serializers.FavouriteProductSerializer,
-    #     permission_classes=[permissions.IsAuthenticated, ],
-    # )
-    # def favourite(self, request, pk=None):
-    #     if request.method == "GET":
-    #         queryset = models.FavouriteProduct.objects.filter(product=self.kwargs['pk'])
-    #         serializer = serializers.FavouriteProductSerializer(instance=queryset, many=True)
-    #         return Response(serializer.data, status=status.HTTP_200_OK)
-    #
-    #     if request.method == "POST":
-    #         serializer = self.get_serializer(data=request.data)
-    #         if serializer.is_valid():
-    #             serializer.save(
-    #                 user=self.request.user.profile,
-    #                 product=self.get_object()
-    #             )
-    #             return redirect(reverse(ProductViewSet.as_view()), {'msg': 'successfully'})
-    #         return Response(serializer.errors)
 
 
 class CategoryViewSet(viewsets.ModelViewSet):
@@ -48,18 +23,28 @@ class CategoryViewSet(viewsets.ModelViewSet):
 class ProductImagesListCreateAPIView(generics.ListCreateAPIView):
     queryset = models.ProductImage.objects.all()
     serializer_class = serializers.ProductImageSerializer
-    permission_classes = [IsAuthor]
+    permission_classes = [IsAuthorImages]
 
 
-class FavouriteProductListCreateAPIView(generics.ListCreateAPIView):
+class FavouriteProductCreateAPIView(generics.CreateAPIView):
     queryset = models.FavouriteProduct.objects.all()
     serializer_class = serializers.FavouriteProductSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, ]
 
-    def perform_create(self, serializer):
-        print(self.kwargs['product_id'])
 
-        serializer.save(
-            user=self.request.user,
-            product=generics.get_object_or_404(models.Product, id=self.kwargs['product_id'])
-        )
+class FavouriteProductListAPIView(generics.ListAPIView):
+    queryset = models.FavouriteProduct.objects.all()
+    serializer_class = serializers.FavouriteProductSerializer
+    permission_classes = [IsAuthor, ]
+
+    def get(self, request, *args, **kwargs):
+        queryset = self.queryset.filter(user=request.user.id)  # filtering the queryset for user
+        serializer = self.get_serializer(queryset, many=True)
+
+        return Response(serializer.data)
+
+
+class FavouriteProductDestroyAPIView(generics.DestroyAPIView):
+    queryset = models.FavouriteProduct.objects.all()
+    serializer_class = serializers.FavouriteProductSerializer
+    permission_classes = [IsAuthor, ]
